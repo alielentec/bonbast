@@ -1,8 +1,8 @@
 import Flag from "react-flagpack";
 import { TokenIcon } from "@web3icons/react/dynamic";
-import { Coins, ArrowUp, ArrowDown } from "lucide-react";
+import { Coins } from "lucide-react";
 import type { Rate } from "@/app/lib/types";
-import { formatRial, formatChange, changeColor } from "@/app/lib/format";
+import { formatRial } from "@/app/lib/format";
 
 function RateIcon({ rate }: { rate: Rate }) {
   if (rate.kind === "fiat") {
@@ -33,14 +33,8 @@ function RateIcon({ rate }: { rate: Rate }) {
   );
 }
 
-export function RateRow({ rate, compact = false }: { rate: Rate; compact?: boolean }) {
-  const change = rate.change;
-  const isUp = change !== undefined && change > 0;
-  const isDown = change !== undefined && change < 0;
+export function RateRow({ rate }: { rate: Rate }) {
   const showCode = rate.kind === "fiat";
-  // The Buy column is hidden in compact (2-column) mode to give the Name
-  // column enough width — small viewports still hide it via responsive classes.
-  const hideBuy = compact;
 
   return (
     <tr className="group border-b border-zinc-100 transition-colors last:border-0 hover:bg-zinc-50/80 dark:border-zinc-900 dark:hover:bg-zinc-900/40">
@@ -66,20 +60,8 @@ export function RateRow({ rate, compact = false }: { rate: Rate; compact?: boole
           )}
         </div>
       </td>
-      <td className="py-1.5 px-2 text-right align-middle font-mono text-[13px] tabular-nums leading-none text-zinc-900 dark:text-zinc-100">
+      <td className="py-1.5 pl-2 pr-3 text-right align-middle font-mono text-[13px] tabular-nums leading-none text-zinc-900 dark:text-zinc-100">
         {formatRial(rate.sell)}
-      </td>
-      {!hideBuy && (
-        <td className="hidden py-1.5 px-2 text-right align-middle font-mono text-[13px] tabular-nums leading-none text-zinc-600 sm:table-cell dark:text-zinc-400">
-          {formatRial(rate.buy)}
-        </td>
-      )}
-      <td className={`py-1.5 pl-2 pr-3 text-right align-middle text-[11px] font-medium tabular-nums leading-none ${changeColor(change)}`}>
-        <span className="inline-flex items-center gap-0.5">
-          {isUp && <ArrowUp size={10} strokeWidth={3} />}
-          {isDown && <ArrowDown size={10} strokeWidth={3} />}
-          {formatChange(change)}
-        </span>
       </td>
     </tr>
   );

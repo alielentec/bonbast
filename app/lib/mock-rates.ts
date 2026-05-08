@@ -65,10 +65,13 @@ export const mockRates: RatesSnapshot = {
     { kind: "gold", code: "GRAMI",   nameEn: "Gerami (1g)",     sell:  30_000_000, buy:  27_000_000, change:  0.20 },
     { kind: "gold", code: "MITHQAL", nameEn: "Gold Mithqal",    sell:  89_392_000, buy:  89_392_000, change:  0.38 },
     { kind: "gold", code: "GRAM18",  nameEn: "Gold Gram (18k)", sell:  20_636_225, buy:  20_636_225, change:  0.40 },
-    { kind: "gold", code: "OUNCE",   nameEn: "Gold Ounce ($)",  sell:       5305, buy:       5305, change:  0.10 },
+    // International prices (oz, BTC) converted to Toman at the current mock
+    // USD≈183,850 mid rate. When live data is wired, these get computed
+    // from the upstream USD price × the live USD/Toman rate.
+    { kind: "gold", code: "OUNCE",   nameEn: "Gold Ounce",      sell: 975_323_425, buy: 975_323_425, change:  0.10 },
   ],
 
   crypto: [
-    { kind: "crypto", code: "BTC", symbol: "btc", nameEn: "Bitcoin ($)", sell: 78406, buy: 78406, change: 1.20 },
+    { kind: "crypto", code: "BTC", symbol: "btc", nameEn: "Bitcoin", sell: 14_418_243_100, buy: 14_418_243_100, change: 1.20 },
   ],
 };

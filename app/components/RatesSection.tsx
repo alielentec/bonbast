@@ -10,29 +10,29 @@ function RatesTable({
   hasCode: boolean;
   compact: boolean;
 }) {
+  // Wider Sell column in non-compact mode (gold/crypto) since their numbers
+  // can run to 14+ digits in Toman (e.g. Bitcoin ≈ 14,400,000,000).
+  const sellWidth = compact ? "w-[110px]" : "w-[160px]";
+
   return (
     <table className="w-full table-fixed border-collapse text-sm">
       <colgroup>
         <col className="w-[34px]" />
         {hasCode && <col className="w-[42px]" />}
         <col />
-        <col className={compact ? "w-[78px]" : "w-[110px]"} />
-        {!compact && <col className="hidden w-[110px] sm:table-column" />}
-        <col className="w-[58px]" />
+        <col className={sellWidth} />
       </colgroup>
       <thead>
         <tr className="border-b border-zinc-200 bg-zinc-50/40 text-[10px] font-medium uppercase tracking-widest text-zinc-400 dark:border-zinc-800 dark:bg-zinc-900/30">
           <th className="py-1.5 pl-3 pr-1 text-left font-medium"></th>
           {hasCode && <th className="py-1.5 px-1 text-left font-medium">Code</th>}
           <th className="py-1.5 px-2 text-left font-medium">Name</th>
-          <th className="py-1.5 px-2 text-right font-medium">Sell</th>
-          {!compact && <th className="hidden py-1.5 px-2 text-right font-medium sm:table-cell">Buy</th>}
-          <th className="py-1.5 pl-2 pr-3 text-right font-medium">Δ</th>
+          <th className="py-1.5 pl-2 pr-3 text-right font-medium">Toman</th>
         </tr>
       </thead>
       <tbody>
         {rates.map((rate) => (
-          <RateRow key={rate.code} rate={rate} compact={compact} />
+          <RateRow key={rate.code} rate={rate} />
         ))}
       </tbody>
     </table>
