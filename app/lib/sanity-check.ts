@@ -16,7 +16,10 @@
 
 import type { RatesSnapshot } from "./types";
 
-const FRANKFURTER_URL = "https://api.frankfurter.dev/latest?base=USD";
+// Frankfurter v1 endpoint. The bare /latest path now 301-redirects to
+// /v1/latest, but Next.js's fetch doesn't auto-follow some redirects in
+// the cache layer, so we point straight at the canonical URL.
+const FRANKFURTER_URL = "https://api.frankfurter.dev/v1/latest?base=USD";
 
 // Tolerance: the Iranian free-market premium isn't uniform across all
 // currencies (different demand pressures), so allow 25% drift before
