@@ -94,58 +94,110 @@ export default async function Home() {
           </aside>
         </div>
 
-        <footer className="mt-8 border-t border-zinc-200 pt-3 text-center text-[11px] text-zinc-400 dark:border-zinc-800">
-          <p>
-            Live free-market rates sourced hourly from{" "}
-            <a
-              href="https://www.tgju.org/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-zinc-600 dark:hover:text-zinc-300"
-            >
-              tgju.org
-            </a>
-            . Prices in Iranian Toman (1 Toman = 10 Rials).
-          </p>
-          {sanity.details.length > 0 && (
-            <p
-              className="mt-1"
-              title={
-                sanity.flagged.length > 0
-                  ? sanity.flagged
-                      .map(
-                        (f) =>
-                          `${f.code}: site implies 1 ${f.code} = $${f.tgjuUsdPerUnit.toFixed(4)}, world says $${f.apiUsdPerUnit.toFixed(4)} (${f.errorPct.toFixed(1)}% off)`,
-                      )
-                      .join("\n")
-                  : `All ${sanity.passed} foreign-vs-USD cross-rates match world FX markets within 5%. (IRR/USD excluded — free-market premium isn't published by public APIs.)`
-              }
-            >
-              Cross-rates verified against{" "}
-              <a
-                href="https://www.frankfurter.dev/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline hover:text-zinc-600 dark:hover:text-zinc-300"
-              >
-                Frankfurter
-              </a>{" "}
-              (ECB):{" "}
-              <span
-                className={
-                  sanity.flagged.length === 0
-                    ? "text-emerald-500"
-                    : "text-amber-500"
-                }
-              >
-                {sanity.passed} of {sanity.details.length} match
-                {sanity.flagged.length > 0
-                  ? `, ${sanity.flagged.length} drifted`
-                  : " ✓"}
-              </span>
-              .
+        <footer className="mt-10 border-t border-zinc-200 pt-6 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
+            <div>
+              <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-700 dark:text-zinc-300">
+                About
+              </h3>
+              <ul className="space-y-1.5">
+                <li><a href="/about" className="hover:text-zinc-900 dark:hover:text-zinc-100">About this site</a></li>
+                <li><a href="/contact" className="hover:text-zinc-900 dark:hover:text-zinc-100">Contact</a></li>
+                <li><a href="/privacy" className="hover:text-zinc-900 dark:hover:text-zinc-100">Privacy policy</a></li>
+                <li><a href="/terms" className="hover:text-zinc-900 dark:hover:text-zinc-100">Terms &amp; disclaimer</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-700 dark:text-zinc-300">
+                Data
+              </h3>
+              <ul className="space-y-1.5">
+                <li>
+                  Source:{" "}
+                  <a
+                    href="https://www.tgju.org/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-zinc-900 dark:hover:text-zinc-100"
+                  >
+                    tgju.org
+                  </a>
+                </li>
+                <li>Refresh: hourly</li>
+                <li>Unit: Iranian Toman</li>
+                <li className="text-[10px] text-zinc-400">1 Toman = 10 Rials</li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-700 dark:text-zinc-300">
+                Verification
+              </h3>
+              {sanity.details.length > 0 ? (
+                <p
+                  title={
+                    sanity.flagged.length > 0
+                      ? sanity.flagged
+                          .map(
+                            (f) =>
+                              `${f.code}: site says 1 ${f.code} = $${f.tgjuUsdPerUnit.toFixed(4)}, world says $${f.apiUsdPerUnit.toFixed(4)} (${f.errorPct.toFixed(1)}% off)`,
+                          )
+                          .join("\n")
+                      : `All ${sanity.passed} foreign-vs-USD cross-rates match world FX markets within 5%. IRR/USD is the free-market rate, not verifiable against ECB.`
+                  }
+                  className="cursor-help"
+                >
+                  Cross-rates checked vs{" "}
+                  <a
+                    href="https://www.frankfurter.dev/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-zinc-900 dark:hover:text-zinc-100"
+                  >
+                    Frankfurter
+                  </a>{" "}
+                  (ECB).
+                  <br />
+                  <span
+                    className={
+                      sanity.flagged.length === 0
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-amber-600 dark:text-amber-400"
+                    }
+                  >
+                    {sanity.passed} of {sanity.details.length} match
+                    {sanity.flagged.length === 0 ? " ✓" : ` · ${sanity.flagged.length} drifted`}
+                  </span>
+                </p>
+              ) : (
+                <p className="text-zinc-400">Cross-check unavailable.</p>
+              )}
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-700 dark:text-zinc-300">
+                Disclaimer
+              </h3>
+              <p className="leading-relaxed text-[11px]">
+                Rates shown are for informational purposes only. Free-market
+                quotes change continuously and may differ from actual exchange
+                counter prices. Not financial advice.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-col items-center gap-1 border-t border-zinc-100 pt-4 text-center text-[10px] text-zinc-400 dark:border-zinc-900">
+            <p>
+              &copy; {new Date().getFullYear()} Iran Rates &mdash; built with
+              Next.js on Vercel.
             </p>
-          )}
+            <p>
+              Persian-calendar dates rendered via Intl. No personal data
+              collected; cookies used only for ad personalization where you
+              consent.
+            </p>
+          </div>
         </footer>
       </main>
     </div>
