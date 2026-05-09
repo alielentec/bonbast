@@ -84,6 +84,12 @@ export function SimulationProvider({
   const [overrides, setOverrides] = useState<Record<string, number>>({});
   const [flashes, setFlashes] = useState<Record<string, FlashEvent>>({});
   const tickCounter = useRef(0);
+  // Synchronous mirror of `overrides`. Needed because React 18+ runs
+  // useState updater functions during the next render — so we can't
+  // compute "new flash kind" inside the updater AND read it on the
+  // following line. The ref lets fire() read the latest overrides
+  // imperatively, then queue state updates AFTER the math is done.
+  const overridesRef = useRef<Record<string, number>>({});
 
   // Mirror props/state into refs so the per-currency timers always read
   // the freshest values without re-arming when those values change.
@@ -97,6 +103,7 @@ export function SimulationProvider({
       const next = !v;
       // Stopping clears overrides so the user immediately sees real values.
       if (!next) {
+        overridesRef.current = {};
         setOverrides({});
         setFlashes({});
       }
@@ -125,38 +132,45 @@ export function SimulationProvider({
 
     const fire = (code: string) => {
       if (stopped) return;
-      // Compute the next value inside a functional state updater so we
-      // always see the latest override chain (no stale closures).
-      let newFlash: FlashKind | undefined;
-      setOverrides((prev) => {
-        const baseline = prev[code] ?? baseRef.current[code];
-        if (baseline === undefined || baseline <= 0) return prev;
-        const delta = (Math.random() * 2 - 1) * PCT_DELTA;
-        const candidate = roundTo10(baseline * (1 + delta));
-        // ±1% on small per-unit values can round to the original after
-        // the round-to-10 — nudge by 10 in the chosen direction so the
-        // user always sees motion when the simulation is "live".
-        const nudged =
-          candidate === baseline
-            ? roundTo10(baseline + (delta >= 0 ? 10 : -10))
-            : candidate;
-        newFlash = nudged >= baseline ? "up" : "down";
-        return { ...prev, [code]: nudged };
-      });
-      if (newFlash) {
-        const tick = ++tickCounter.current;
-        const event: FlashEvent = { kind: newFlash, tick };
-        setFlashes((prev) => ({ ...prev, [code]: event }));
-        window.setTimeout(() => {
-          setFlashes((prev) => {
-            // Only clear if still our event — a more recent one supersedes.
-            if (prev[code]?.tick !== tick) return prev;
-            const cleaned = { ...prev };
-            delete cleaned[code];
-            return cleaned;
-          });
-        }, FLASH_HOLD_MS);
+      // Read the latest override (or fall back to server value) via the
+      // ref — this is synchronous, unlike useState which only updates
+      // during render. Successive ticks compound off each other.
+      const baseline =
+        overridesRef.current[code] ?? baseRef.current[code];
+      if (baseline === undefined || baseline <= 0) {
+        schedule(code);
+        return;
       }
+
+      const delta = (Math.random() * 2 - 1) * PCT_DELTA;
+      const candidate = roundTo10(baseline * (1 + delta));
+      // ±1% of small values can round to the original after roundTo10 —
+      // nudge by 10 so the user always sees motion.
+      const nudged =
+        candidate === baseline
+          ? roundTo10(baseline + (delta >= 0 ? 10 : -10))
+          : candidate;
+      const newFlash: FlashKind = nudged >= baseline ? "up" : "down";
+
+      // Mutate the ref synchronously so the next tick reads the new value.
+      overridesRef.current = { ...overridesRef.current, [code]: nudged };
+      // Queue a React render with the same content (state == ref).
+      setOverrides(overridesRef.current);
+
+      const tick = ++tickCounter.current;
+      const event: FlashEvent = { kind: newFlash, tick };
+      setFlashes((prev) => ({ ...prev, [code]: event }));
+      window.setTimeout(() => {
+        setFlashes((prev) => {
+          // Only clear if still our event — a more recent flash on the same
+          // cell supersedes and gets its own clear timer.
+          if (prev[code]?.tick !== tick) return prev;
+          const cleaned = { ...prev };
+          delete cleaned[code];
+          return cleaned;
+        });
+      }, FLASH_HOLD_MS);
+
       schedule(code);
     };
 
