@@ -1,5 +1,6 @@
 import { Activity, RefreshCw } from "lucide-react";
 import { TwoClocks } from "./Clock";
+import { SimulationControls } from "./SimulationControls";
 
 export function Header({ updatedAt }: { updatedAt: string }) {
   return (
@@ -36,6 +37,7 @@ export function Header({ updatedAt }: { updatedAt: string }) {
           <RefreshCw size={12} />
           Refresh
         </button>
+        <SimulationControls />
       </div>
     </header>
   );

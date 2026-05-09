@@ -2,7 +2,7 @@ import Flag from "react-flagpack";
 import { TokenIcon } from "@web3icons/react/dynamic";
 import { Coins } from "lucide-react";
 import type { Rate } from "@/app/lib/types";
-import { formatRial } from "@/app/lib/format";
+import { LiveValue } from "./LiveValue";
 
 function RateIcon({ rate }: { rate: Rate }) {
   if (rate.kind === "fiat") {
@@ -61,7 +61,7 @@ export function RateRow({ rate }: { rate: Rate }) {
         </div>
       </td>
       <td className="py-1.5 pl-2 pr-3 text-right align-middle font-mono text-[13px] tabular-nums leading-none text-zinc-900 dark:text-zinc-100">
-        {formatRial(rate.sell)}
+        <LiveValue code={rate.code} value={rate.sell} />
       </td>
     </tr>
   );

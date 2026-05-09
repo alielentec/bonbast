@@ -2,6 +2,7 @@ import { Header } from "./components/Header";
 import { RatesSection } from "./components/RatesSection";
 import { AdSlot } from "./components/AdSlot";
 import { CurrencyConverter } from "./components/CurrencyConverter";
+import { SimulationProvider } from "./components/SimulationProvider";
 import { fetchTgjuRates } from "./lib/tgju-fetcher";
 import { crossCheckRates } from "./lib/sanity-check";
 import { mockRates } from "./lib/mock-rates";
@@ -29,6 +30,13 @@ export default async function Home() {
   }
   const { updatedAt, fiat, gold, crypto } = snapshot;
 
+  // Flat code→sell-value map for the SimulationProvider. Includes every
+  // displayed rate (fiat + gold + crypto) so the demo button affects the
+  // entire page, not just currencies.
+  const baseValues: Record<string, number> = Object.fromEntries(
+    [...fiat, ...gold, ...crypto].map((r) => [r.code, r.sell]),
+  );
+
   // Cross-check against Frankfurter (ECB-quoted majors). We compare the
   // foreign-vs-USD ratio implied by tgju's Toman values against the same
   // ratio from world FX markets. IRR is intentionally excluded — its
@@ -48,6 +56,7 @@ export default async function Home() {
   }
 
   return (
+    <SimulationProvider baseValues={baseValues}>
     <div className="min-h-screen bg-zinc-50 dark:bg-black">
       <main className="mx-auto max-w-6xl px-3 py-4 sm:px-4 sm:py-6 lg:px-6">
         <Header updatedAt={updatedAt} />
@@ -140,5 +149,6 @@ export default async function Home() {
         </footer>
       </main>
     </div>
+    </SimulationProvider>
   );
 }

@@ -13,6 +13,7 @@
 
 import type { RatesSnapshot, FiatRate, GoldRate, CryptoRate } from "./types";
 import { mockRates } from "./mock-rates";
+import { roundTo10 } from "./format";
 
 const UA = "IranRatesAggregator/0.1 (+contact: ali.elentec@gmail.com)";
 
@@ -130,10 +131,13 @@ function bitcoinTomanFromCrypto(html: string): number | null {
   if (!m) return null;
   const rial = parseInt(m[1].replace(/,/g, ""), 10);
   if (!Number.isFinite(rial)) return null;
-  return Math.round(rial / 10);
+  return roundTo10(rial / 10);
 }
 
-const rialToToman = (rial: number) => Math.round(rial / 10);
+// Toman is the everyday Iranian unit (1 Toman = 10 Rials). All displayed
+// prices are rounded to the nearest 10 Toman — finer precision is below
+// what merchants and travelers actually quote in.
+const rialToToman = (rial: number) => roundTo10(rial / 10);
 
 // ---------------------------------------------------------------------------
 // Public entry point
@@ -163,7 +167,7 @@ export async function fetchTgjuRates(): Promise<RatesSnapshot> {
     // Result: a Toman value matching our existing display convention.
     const tgjuPerN = TGJU_QUOTE_PER[rate.code] ?? 1;
     const tomanPerSingleUnit = rialToToman(rial) / tgjuPerN;
-    const tomanQuote = Math.round(tomanPerSingleUnit * (rate.units ?? 1));
+    const tomanQuote = roundTo10(tomanPerSingleUnit * (rate.units ?? 1));
     return { ...rate, sell: tomanQuote, buy: tomanQuote };
   });
 
