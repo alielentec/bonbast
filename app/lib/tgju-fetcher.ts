@@ -134,10 +134,10 @@ function bitcoinTomanFromCrypto(html: string): number | null {
   return roundTo10(rial / 10);
 }
 
-// Toman is the everyday Iranian unit (1 Toman = 10 Rials). All displayed
-// prices are rounded to the nearest 10 Toman — finer precision is below
-// what merchants and travelers actually quote in.
-const rialToToman = (rial: number) => roundTo10(rial / 10);
+// 1 Toman = 10 Rial. Return the exact ratio — final rounding to 10
+// happens once at the display step (per-unit math like ÷ tgjuPerN can
+// introduce a fractional Toman that we want to preserve until then).
+const rialToToman = (rial: number) => rial / 10;
 
 // ---------------------------------------------------------------------------
 // Public entry point
@@ -178,14 +178,14 @@ export async function fetchTgjuRates(): Promise<RatesSnapshot> {
     if (coinSlug && coinHtml) {
       const rial = priceForSlug(coinHtml, coinSlug);
       if (rial !== null) {
-        const t = rialToToman(rial);
+        const t = roundTo10(rialToToman(rial));
         return { ...rate, sell: t, buy: t };
       }
     }
     if (goldSlug && goldHtml) {
       const rial = priceForSlug(goldHtml, goldSlug);
       if (rial !== null) {
-        const t = rialToToman(rial);
+        const t = roundTo10(rialToToman(rial));
         return { ...rate, sell: t, buy: t };
       }
     }
