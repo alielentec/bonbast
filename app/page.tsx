@@ -29,17 +29,19 @@ export default async function Home() {
   }
   const { updatedAt, fiat, gold, crypto } = snapshot;
 
-  // Cross-check against Frankfurter (ECB-quoted majors). Logs warnings
-  // server-side so they show up in build output and Vercel function logs.
-  // Failure here never blocks the page render.
+  // Cross-check against Frankfurter (ECB-quoted majors). We compare the
+  // foreign-vs-USD ratio implied by tgju's Toman values against the same
+  // ratio from world FX markets. IRR is intentionally excluded — its
+  // free-market premium isn't published by any public FX API.
+  // Logs warnings server-side; never blocks the page render.
   const sanity = await crossCheckRates(snapshot);
   if (sanity.flagged.length > 0) {
     console.warn(
-      `[sanity] ${sanity.flagged.length} currencies drifted >25% vs Frankfurter:`,
+      `[sanity] ${sanity.flagged.length} cross-rates drifted >5% vs Frankfurter:`,
       sanity.flagged
         .map(
           (f) =>
-            `${f.code} got=${f.actualToman} expected≈${f.expectedToman} (${f.errorPct.toFixed(0)}% off)`,
+            `${f.code}: tgju=$${f.tgjuUsdPerUnit.toFixed(4)} world=$${f.apiUsdPerUnit.toFixed(4)} (${f.errorPct.toFixed(1)}% off)`,
         )
         .join("; "),
     );
@@ -96,7 +98,7 @@ export default async function Home() {
             </a>
             . Prices in Iranian Toman (1 Toman = 10 Rials).
           </p>
-          {sanity.verified > 0 && (
+          {sanity.details.length > 0 && (
             <p
               className="mt-1"
               title={
@@ -104,13 +106,13 @@ export default async function Home() {
                   ? sanity.flagged
                       .map(
                         (f) =>
-                          `${f.code}: got ${f.actualToman.toLocaleString()}, expected ≈${f.expectedToman.toLocaleString()} (${f.errorPct.toFixed(0)}% off)`,
+                          `${f.code}: site implies 1 ${f.code} = $${f.tgjuUsdPerUnit.toFixed(4)}, world says $${f.apiUsdPerUnit.toFixed(4)} (${f.errorPct.toFixed(1)}% off)`,
                       )
                       .join("\n")
-                  : "All cross-checked currencies match within 25% of ECB-implied rates."
+                  : `All ${sanity.passed} foreign-vs-USD cross-rates match world FX markets within 5%. (IRR/USD excluded — free-market premium isn't published by public APIs.)`
               }
             >
-              Cross-checked against{" "}
+              Cross-rates verified against{" "}
               <a
                 href="https://www.frankfurter.dev/"
                 target="_blank"
@@ -119,7 +121,7 @@ export default async function Home() {
               >
                 Frankfurter
               </a>{" "}
-              (ECB rates):{" "}
+              (ECB):{" "}
               <span
                 className={
                   sanity.flagged.length === 0
@@ -127,9 +129,9 @@ export default async function Home() {
                     : "text-amber-500"
                 }
               >
-                {sanity.verified} verified
+                {sanity.passed} of {sanity.details.length} match
                 {sanity.flagged.length > 0
-                  ? `, ${sanity.flagged.length} flagged`
+                  ? `, ${sanity.flagged.length} drifted`
                   : " ✓"}
               </span>
               .
