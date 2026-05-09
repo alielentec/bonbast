@@ -1,8 +1,11 @@
+"use client";
+
 import Flag from "react-flagpack";
 import { TokenIcon } from "@web3icons/react/dynamic";
 import { Coins } from "lucide-react";
 import type { Rate } from "@/app/lib/types";
 import { LiveValue } from "./LiveValue";
+import { useSim } from "./SimulationProvider";
 
 function RateIcon({ rate }: { rate: Rate }) {
   if (rate.kind === "fiat") {
@@ -35,6 +38,20 @@ function RateIcon({ rate }: { rate: Rate }) {
 
 export function RateRow({ rate }: { rate: Rate }) {
   const showCode = rate.kind === "fiat";
+  // Reading the flash event here (not inside LiveValue) lets us apply the
+  // CSS animation to the *entire* price <td> — much wider and more
+  // attention-grabbing than a small inline span around the digits.
+  const { flashes } = useSim();
+  const flash = flashes[rate.code];
+
+  // The animation class is defined in globals.css via @keyframes and uses
+  // per-keyframe cubic-bezier so the bg snaps in fast (~180ms) and fades
+  // out slow (~1.6s). Symmetric `transition: bg-color` can't do that.
+  const flashClass = flash
+    ? flash.kind === "up"
+      ? "flash-up"
+      : "flash-down"
+    : "";
 
   return (
     <tr className="group border-b border-zinc-100 transition-colors last:border-0 hover:bg-zinc-50/80 dark:border-zinc-900 dark:hover:bg-zinc-900/40">
@@ -60,7 +77,13 @@ export function RateRow({ rate }: { rate: Rate }) {
           )}
         </div>
       </td>
-      <td className="py-1.5 pl-2 pr-3 text-right align-middle font-mono text-[13px] tabular-nums leading-none text-zinc-900 dark:text-zinc-100">
+      <td
+        // Re-keying on each flash tick forces React to unmount + remount
+        // this td, which restarts the CSS animation cleanly even if a
+        // second flash arrives before the first finishes.
+        key={flash?.tick ?? "static"}
+        className={`py-1.5 pl-2 pr-3 text-right align-middle font-mono text-[13px] tabular-nums leading-none text-zinc-900 dark:text-zinc-100 ${flashClass}`}
+      >
         <LiveValue code={rate.code} value={rate.sell} />
       </td>
     </tr>

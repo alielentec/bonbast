@@ -12,6 +12,7 @@ import {
 import { roundTo10 } from "@/app/lib/format";
 
 export type FlashKind = "up" | "down";
+export type FlashEvent = { kind: FlashKind; tick: number };
 
 type SimState = {
   // True = ticking. False = display server-fetched values verbatim.
@@ -22,8 +23,10 @@ type SimState = {
   // Per-code current value when simulation has touched it. Empty when
   // simulation is disabled or hasn't ticked yet.
   overrides: Record<string, number>;
-  // Per-code active flash. Cleared 1.4s after the tick that set it.
-  flashes: Record<string, FlashKind>;
+  // Per-code active flash event. The `tick` field is a monotonically
+  // increasing counter so consumers can use it as a React key to remount
+  // (and thereby restart) the CSS animation on each new flash.
+  flashes: Record<string, FlashEvent>;
 };
 
 type SimAPI = SimState & {
@@ -49,7 +52,11 @@ export function useSim(): SimAPI {
   );
 }
 
-const FLASH_HOLD_MS = 1400; // how long the highlight stays "in" before fading
+// Match the CSS `flash-up` / `flash-down` keyframes total duration so the
+// React state clears at roughly the same time the visual animation ends.
+// Out of sync here would leak old flash events into context indefinitely
+// (no visual harm, but stale state is confusing in devtools).
+const FLASH_HOLD_MS = 1800;
 const PCT_DELTA = 0.01; // ±1% per the spec
 // Fraction of all rate codes that are "alive" (running their own timer).
 // 30% feels active without overwhelming — for ~40 codes this means ~12
@@ -75,7 +82,8 @@ export function SimulationProvider({
   const [enabled, setEnabled] = useState(false);
   const [intervalSec, setIntervalSecState] = useState(5);
   const [overrides, setOverrides] = useState<Record<string, number>>({});
-  const [flashes, setFlashes] = useState<Record<string, FlashKind>>({});
+  const [flashes, setFlashes] = useState<Record<string, FlashEvent>>({});
+  const tickCounter = useRef(0);
 
   // Mirror props/state into refs so the per-currency timers always read
   // the freshest values without re-arming when those values change.
@@ -136,12 +144,13 @@ export function SimulationProvider({
         return { ...prev, [code]: nudged };
       });
       if (newFlash) {
-        const f = newFlash;
-        setFlashes((prev) => ({ ...prev, [code]: f }));
+        const tick = ++tickCounter.current;
+        const event: FlashEvent = { kind: newFlash, tick };
+        setFlashes((prev) => ({ ...prev, [code]: event }));
         window.setTimeout(() => {
           setFlashes((prev) => {
-            // Only clear if still our flash — a more recent one supersedes.
-            if (prev[code] !== f) return prev;
+            // Only clear if still our event — a more recent one supersedes.
+            if (prev[code]?.tick !== tick) return prev;
             const cleaned = { ...prev };
             delete cleaned[code];
             return cleaned;

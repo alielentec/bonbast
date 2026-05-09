@@ -25,3 +25,62 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ---------------------------------------------------------------------- */
+/* Live-pricing flash animations (per-row price-cell highlight).          */
+/*                                                                        */
+/* Asymmetric two-segment timing: a sharp ramp-in (~10% of total =        */
+/* ~180ms) so the cell visibly "snaps" into the highlighted state, then a */
+/* long ease-in-out fade-out across the remaining 90% (~1.6s).            */
+/*                                                                        */
+/* `box-shadow` provides the colored glow; bg fills the cell. Both decay  */
+/* in lockstep. `animation-fill-mode: forwards` holds the final           */
+/* (transparent) state so the cell doesn't snap back at animation end.    */
+/* ---------------------------------------------------------------------- */
+
+@keyframes flash-up {
+  0% {
+    background-color: rgba(16, 185, 129, 0);
+    box-shadow: inset 0 0 0 0 rgba(16, 185, 129, 0), 0 0 0 0 rgba(16, 185, 129, 0);
+    /* Sharp, snappy enter — like easeOutExpo. Most of the bg appears in
+       the first ~30 ms, settling fully by 180 ms. */
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  10% {
+    background-color: rgba(16, 185, 129, 0.55);
+    box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.7),
+      0 0 18px 2px rgba(16, 185, 129, 0.55);
+    /* Smooth, even fade for the long tail. */
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+  }
+  100% {
+    background-color: rgba(16, 185, 129, 0);
+    box-shadow: inset 0 0 0 0 rgba(16, 185, 129, 0), 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+@keyframes flash-down {
+  0% {
+    background-color: rgba(244, 63, 94, 0);
+    box-shadow: inset 0 0 0 0 rgba(244, 63, 94, 0), 0 0 0 0 rgba(244, 63, 94, 0);
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  10% {
+    background-color: rgba(244, 63, 94, 0.55);
+    box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.7),
+      0 0 18px 2px rgba(244, 63, 94, 0.55);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+  }
+  100% {
+    background-color: rgba(244, 63, 94, 0);
+    box-shadow: inset 0 0 0 0 rgba(244, 63, 94, 0), 0 0 0 0 rgba(244, 63, 94, 0);
+  }
+}
+
+.flash-up {
+  animation: flash-up 1800ms forwards;
+}
+
+.flash-down {
+  animation: flash-down 1800ms forwards;
+}
