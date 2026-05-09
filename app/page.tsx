@@ -2,10 +2,42 @@ import { Header } from "./components/Header";
 import { RatesSection } from "./components/RatesSection";
 import { AdSlot } from "./components/AdSlot";
 import { CurrencyConverter } from "./components/CurrencyConverter";
+import { fetchTgjuRates } from "./lib/tgju-fetcher";
+import { crossCheckRates } from "./lib/sanity-check";
 import { mockRates } from "./lib/mock-rates";
 
-export default function Home() {
-  const { updatedAt, fiat, gold, crypto } = mockRates;
+// Tell Next.js to revalidate the page (and the upstream fetches) at most
+// once per hour. Within the hour, every visitor is served the same
+// statically rendered HTML from Vercel's CDN — zero load on tgju, zero
+// compute cost per visitor.
+export const revalidate = 3600;
+
+export default async function Home() {
+  // Per-section fallback already happens inside fetchTgjuRates. This outer
+  // try/catch only covers a catastrophic upstream failure (DNS, etc.).
+  let snapshot;
+  try {
+    snapshot = await fetchTgjuRates();
+  } catch {
+    snapshot = mockRates;
+  }
+  const { updatedAt, fiat, gold, crypto } = snapshot;
+
+  // Cross-check against Frankfurter (ECB-quoted majors). Logs warnings
+  // server-side so they show up in build output and Vercel function logs.
+  // Failure here never blocks the page render.
+  const sanity = await crossCheckRates(snapshot);
+  if (sanity.flagged.length > 0) {
+    console.warn(
+      `[sanity] ${sanity.flagged.length} currencies drifted >25% vs Frankfurter:`,
+      sanity.flagged
+        .map(
+          (f) =>
+            `${f.code} got=${f.actualToman} expected≈${f.expectedToman} (${f.errorPct.toFixed(0)}% off)`,
+        )
+        .join("; "),
+    );
+  }
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black">
@@ -46,7 +78,57 @@ export default function Home() {
         </div>
 
         <footer className="mt-8 border-t border-zinc-200 pt-3 text-center text-[11px] text-zinc-400 dark:border-zinc-800">
-          <p>Mock data shown for layout testing — live data wiring is the next step.</p>
+          <p>
+            Live free-market rates sourced hourly from{" "}
+            <a
+              href="https://www.tgju.org/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-zinc-600 dark:hover:text-zinc-300"
+            >
+              tgju.org
+            </a>
+            . Prices in Iranian Toman (1 Toman = 10 Rials).
+          </p>
+          {sanity.verified > 0 && (
+            <p
+              className="mt-1"
+              title={
+                sanity.flagged.length > 0
+                  ? sanity.flagged
+                      .map(
+                        (f) =>
+                          `${f.code}: got ${f.actualToman.toLocaleString()}, expected ≈${f.expectedToman.toLocaleString()} (${f.errorPct.toFixed(0)}% off)`,
+                      )
+                      .join("\n")
+                  : "All cross-checked currencies match within 25% of ECB-implied rates."
+              }
+            >
+              Cross-checked against{" "}
+              <a
+                href="https://www.frankfurter.dev/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-zinc-600 dark:hover:text-zinc-300"
+              >
+                Frankfurter
+              </a>{" "}
+              (ECB rates):{" "}
+              <span
+                className={
+                  sanity.flagged.length === 0
+                    ? "text-emerald-500"
+                    : "text-amber-500"
+                }
+              >
+                {sanity.verified} verified
+                {sanity.flagged.length > 0
+                  ? `, ${sanity.flagged.length} flagged`
+                  : " ✓"}
+              </span>
+              .
+            </p>
+          )}
         </footer>
       </main>
     </div>
