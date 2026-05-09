@@ -6,16 +6,16 @@ import { fetchTgjuRates } from "./lib/tgju-fetcher";
 import { crossCheckRates } from "./lib/sanity-check";
 import { mockRates } from "./lib/mock-rates";
 
-// Tell Next.js to revalidate the page (and the upstream fetches) at most
-// once per hour. Within the hour, every visitor is served the same
-// statically rendered HTML from Vercel's CDN — zero load on tgju, zero
-// compute cost per visitor.
-export const revalidate = 3600;
-
-// Run page generation in Frankfurt. tgju.org appears to block US-datacenter
-// IPs (common for Iran-region sites due to sanctions/CDN policy), so the
-// default us-east-1 region falls back to mock data. Frankfurt is reachable
-// and EU-side latency to tgju is acceptable.
+// We can't statically prerender at build time because Vercel's build server
+// runs in us-east-1 and tgju.org blocks US datacenter IPs (Iran-region CDN
+// policy). Force runtime rendering in Frankfurt instead — there the fetch
+// to tgju succeeds.
+//
+// Cost is still near-zero: the upstream fetches are cached by Next.js for
+// 1 hour each (revalidate: 3600 inside the fetcher), so only the very first
+// request after each hour boundary actually hits tgju. The per-visit work
+// is just template rendering with already-cached data.
+export const dynamic = "force-dynamic";
 export const preferredRegion = "fra1";
 
 export default async function Home() {
