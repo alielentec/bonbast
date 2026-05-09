@@ -12,6 +12,12 @@ import { mockRates } from "./lib/mock-rates";
 // compute cost per visitor.
 export const revalidate = 3600;
 
+// Run page generation in Frankfurt. tgju.org appears to block US-datacenter
+// IPs (common for Iran-region sites due to sanctions/CDN policy), so the
+// default us-east-1 region falls back to mock data. Frankfurt is reachable
+// and EU-side latency to tgju is acceptable.
+export const preferredRegion = "fra1";
+
 export default async function Home() {
   // Per-section fallback already happens inside fetchTgjuRates. This outer
   // try/catch only covers a catastrophic upstream failure (DNS, etc.).

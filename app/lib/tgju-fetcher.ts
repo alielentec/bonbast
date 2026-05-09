@@ -92,9 +92,13 @@ async function fetchHtml(url: string): Promise<string | null> {
       next: { revalidate: 3600 },
       headers: { "User-Agent": UA, Accept: "text/html" },
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error(`[tgju] ${url} → HTTP ${res.status}`);
+      return null;
+    }
     return await res.text();
-  } catch {
+  } catch (err) {
+    console.error(`[tgju] ${url} failed:`, err instanceof Error ? err.message : err);
     return null;
   }
 }
