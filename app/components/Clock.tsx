@@ -4,19 +4,30 @@ import { useEffect, useState } from "react";
 
 type FormatOpts = { tz?: string; persian?: boolean };
 
+// Cache for Intl.DateTimeFormat instances to avoid expensive re-creation.
+const formatters = new Map<string, Intl.DateTimeFormat>();
+
 function format(iso: string, opts: FormatOpts = {}): string {
   // Locale extension `u-ca-persian` selects the Shamsi (Jalali) calendar
   // while `en` keeps digits and month names in English transliteration
   // (e.g. "Ordibehesht 12, 1405" instead of "اردیبهشت ۱۲، ۱۴۰۵").
   const locale = opts.persian ? "en-u-ca-persian" : "en-US";
-  return new Date(iso).toLocaleString(locale, {
-    timeZone: opts.tz,
-    hour: "2-digit",
-    minute: "2-digit",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  const key = `${locale}-${opts.tz ?? "default"}`;
+
+  let formatter = formatters.get(key);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(locale, {
+      timeZone: opts.tz,
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+    formatters.set(key, formatter);
+  }
+
+  return formatter.format(new Date(iso));
 }
 
 function shortTz(tz?: string): string {
